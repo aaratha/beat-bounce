@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include "raymath.h"
 
+#include <cmath>
+
 const float G = 1000.0f;
 const int NUM_POINTS = 15;
 const float REST_SPACING = 8.0f;
@@ -25,6 +27,8 @@ public:
       prev_points[i] = {400.0f, 50.0f + i * REST_SPACING};
     }
   }
+
+  void set_end_point(vec2 point) { points[NUM_POINTS - 1] = point; }
 
   void apply_constraints() {
     for (int i = 1; i < NUM_POINTS; ++i) {
@@ -64,12 +68,39 @@ public:
   }
 };
 
+class Box {
+  // clockwise order
+  vec2 vertices[4];
+
+public:
+  Box(float x, float y, float width, float height, float rotation_deg) {
+    float rad = rotation_deg * (PI / 180.0f);
+    float w2 = width / 2.0f;
+    float h2 = height / 2.0f;
+
+    // clockwise: top-left, top-right, bottom-right, bottom-left
+    float localX[4] = {-w2, w2, w2, -w2};
+    float localY[4] = {-h2, -h2, h2, h2};
+
+    for (int i = 0; i < 4; i++) {
+      vertices[i] = {x + localX[i] * cosf(rad) - localY[i] * sinf(rad),
+                     y + localX[i] * sinf(rad) + localY[i] * cosf(rad)};
+    }
+  }
+
+  void draw() {
+    DrawTriangle(vertices[0], vertices[3], vertices[1], WHITE); // now clockwise
+    DrawTriangle(vertices[1], vertices[3], vertices[2], WHITE);
+  }
+};
+
 int main() {
   // Initialize raylib
   InitWindow(800, 600, "Raylib and Miniaudio Example");
   SetTargetFPS(60);
 
   Rope rope;
+  Box box(600.0f, 200.0f, 200.0f, 20.0f, -120.0f);
 
   // Main loop
   while (!WindowShouldClose()) {
@@ -82,6 +113,7 @@ int main() {
     DrawFPS(10, 10);
 
     rope.draw();
+    box.draw();
 
     EndDrawing();
   }
